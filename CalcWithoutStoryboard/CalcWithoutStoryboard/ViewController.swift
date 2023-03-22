@@ -7,7 +7,18 @@
 
 import UIKit
 
+enum Operations{
+    case add
+    case divide
+    case sub
+    case multiply
+}
+
 class ViewController: UIViewController {
+    
+    var savedOperation : Operations?
+    var storedButtonValue = 0
+    var operationPressed: Bool = false
     
     let mainStackView: UIStackView = {
         let mainstack = UIStackView()
@@ -88,31 +99,31 @@ class ViewController: UIViewController {
         // Do any additional setup after loading the view.
     
         mainStackView.addArrangedSubview(label)
-        firstStackView.addArrangedSubview(createButton(title: "%", color: .gray))
-        firstStackView.addArrangedSubview(createButton(title: "+/-", color: .gray))
-        firstStackView.addArrangedSubview(createButton(title: "AC", color: .gray))
-        firstStackView.addArrangedSubview(createButton(title: "÷", color: .orange))
+        firstStackView.addArrangedSubview(createButton(title: "%", color: .gray, action: #selector(operationAction)))
+        firstStackView.addArrangedSubview(createButton(title: "+/-", color: .gray, action: #selector(operationAction)))
+        firstStackView.addArrangedSubview(createButton(title: "AC", color: .gray, action: #selector(operationAction)))
+        firstStackView.addArrangedSubview(createButton(title: "÷", color: .orange, action: #selector(operationAction)))
         
         mainStackView.addArrangedSubview(firstStackView)
         
         secondStackView.addArrangedSubview(createButton(title: "7"))
         secondStackView.addArrangedSubview(createButton(title: "8"))
         secondStackView.addArrangedSubview(createButton(title: "9"))
-        secondStackView.addArrangedSubview(createButton(title: "X", color: .orange))
+        secondStackView.addArrangedSubview(createButton(title: "X", color: .orange, action: #selector(operationAction)))
         
         mainStackView.addArrangedSubview(secondStackView)
         
         thirdStackView.addArrangedSubview(createButton(title: "4"))
         thirdStackView.addArrangedSubview(createButton(title: "5"))
         thirdStackView.addArrangedSubview(createButton(title: "6"))
-        thirdStackView.addArrangedSubview(createButton(title: "-", color: .orange))
+        thirdStackView.addArrangedSubview(createButton(title: "-", color: .orange, action: #selector(operationAction)))
         
         mainStackView.addArrangedSubview(thirdStackView)
         
         fourthStackView.addArrangedSubview(createButton(title: "1"))
         fourthStackView.addArrangedSubview(createButton(title: "2"))
         fourthStackView.addArrangedSubview(createButton(title: "3"))
-        fourthStackView.addArrangedSubview(createButton(title: "+", color: .orange))
+        fourthStackView.addArrangedSubview(createButton(title: "+", color: .orange, action: #selector(operationAction)))
         
         mainStackView.addArrangedSubview(fourthStackView)
         
@@ -121,9 +132,11 @@ class ViewController: UIViewController {
         tempStack.alignment = .fill
         tempStack.distribution = .fillEqually
         tempStack.addArrangedSubview(createButton(title: "."))
-        tempStack.addArrangedSubview(createButton(title: "=", color: .orange))
+        tempStack.addArrangedSubview(createButton(title: "=", color: .orange, action: #selector(operationAction)))
         fifthStackView.addArrangedSubview(createButton(title: "0"))
-        fifthStackView.addSubview((tempStack))
+        fifthStackView.addArrangedSubview(tempStack)
+        
+        mainStackView.addArrangedSubview(fifthStackView)
         
         // Constraints
         
@@ -139,11 +152,101 @@ class ViewController: UIViewController {
         ])
     }
 
-    func createButton(title:String, color:UIColor = .blue) -> UIButton{
+    func createButton(title:String,
+                      color:UIColor = .blue,
+                      action: Selector = #selector(numPadAction)) -> UIButton{
+        
         let button = UIButton()
         button.setTitle(title, for: .normal)
         button.backgroundColor = color
         button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 33)
+        button.addTarget(self, action: action, for: .touchUpInside)
         return button
     }
+
+    
+    @objc func numPadAction(_ sender: UIButton){
+        
+        if operationPressed{
+            operationPressed = false
+            label.text = "0"
+        }
+        
+        let prevVal = label.text == "0" ? "" : (label.text ?? "")
+        label.text = prevVal + (sender.titleLabel?.text ?? "")
+        
+    }
+    
+    
+    
+    @objc func operationAction(_ sender: UIButton){
+        guard let text = sender.titleLabel?.text,
+              let firstValueString = label.text,
+              let firstValueInt = Int(firstValueString)
+        
+        else{return}
+        
+        switch text{
+        case "+":
+            savedOperation = .add
+            storedButtonValue = firstValueInt
+            operationPressed = true
+            
+        case "-":
+            savedOperation = .sub
+            storedButtonValue = firstValueInt
+            operationPressed = true
+            
+        case "X":
+            savedOperation = .multiply
+            storedButtonValue = firstValueInt
+            operationPressed = true
+            
+        case "÷":
+            savedOperation = .divide
+            storedButtonValue = firstValueInt
+            operationPressed = true
+            
+        case "+/-":
+            label.text = String(firstValueInt * -1)
+            
+        case "%":
+            label.text = String(firstValueInt * 1/100)
+            
+            
+        case "AC":
+            label.text = "0"
+            
+        case "=":
+            handleResult(secondValueInt: firstValueInt, firstValueInt: storedButtonValue)
+            
+        default:
+            return
+        }
+        operationPressed = true
+    }
+    
+    
+    func handleResult(secondValueInt: Int,firstValueInt : Int){
+    guard let savedOperation = savedOperation else {return}
+    
+        switch savedOperation {
+        case .add:
+            label.text = String(describing: firstValueInt+secondValueInt)
+        case .divide:
+            label.text = String(describing: firstValueInt/secondValueInt)
+        case .sub:
+            label.text = String(describing: firstValueInt-secondValueInt)
+        case .multiply:
+            label.text = String(describing: firstValueInt*secondValueInt)
+        }
+        
+        print(firstValueInt)
+        print(savedOperation)
+        print(secondValueInt)
+    
+        storedButtonValue = 0
+        
+    }
+    
 }
